@@ -27,35 +27,29 @@ public without sharing class LeadsTriggerHandler
     /**
      * Create account record for each lead.
      *
-     * @param leadRecords
+     * @param records
      */
-    private void createAccounts(List<Lead> leadRecords)
+    private void createAccounts(List<Lead> records)
     {
-        Leads domain = Leads.newInstance(leadRecords);
-
-        Set<String> websites = domain.getWebsites();
-
-        List<Account> accountRecords = AccountsSelector.newInstance().selectByWebsite(websites);
-
-        Map<String, Id> accoutIdByWebsite = Accounts.newInstance(accountRecords).getAccoutIdByWebsite();
+        Map<String, Id> accoutIdByAccountWebsite = getAccountIdByAccountWebsite(records);
 
         List<Account> newAccountRecords = new List<Account>();
 
-        for (Lead leadRecord : domain.getRecords())
+        for (Lead record : records)
         {
             // do not process if website field is blank
-            if (String.isBlank(leadRecord.Website)) continue;
+            if (String.isBlank(record.Website)) continue;
 
             // make sure this is lower case because map key is case sensitive
-            String websiteLowerCase = leadRecord.Website.toLowerCase();
+            String websiteLowerCase = record.Website.toLowerCase();
 
             // skip if Lead.Website already matches an account.Website
-            if (accoutIdByWebsite.containsKey(websiteLowerCase)) continue;
+            if (accoutIdByAccountWebsite.containsKey(websiteLowerCase)) continue;
 
             // @TODO add lead to account mapped fields here
             newAccountRecords.add(new Account(
-                Name = leadRecord.Company,
-                Website = leadRecord.Website
+                Name = record.Company,
+                Website = record.Website
             ));
         }
 
@@ -65,40 +59,49 @@ public without sharing class LeadsTriggerHandler
     /**
      * Create contact record for each lead.
      *
-     * @param leadRecords
+     * @param records
      */
-    private void createContacts(List<Lead> leadRecords)
+    private void createContacts(List<Lead> records)
     {
-        Leads domain = Leads.newInstance(leadRecords);
-
-        Set<String> websites = domain.getWebsites();
-
-        // requery account records in case createAccount has inserted new ones
-        List<Account> accountRecords = AccountsSelector.newInstance().selectByWebsite(websites);
-
-        Map<String, Id> accoutIdByWebsite = Accounts.newInstance(accountRecords).getAccoutIdByWebsite();
+        Map<String, Id> accoutIdByAccountWebsite = getAccountIdByAccountWebsite(records);
 
         List<Contact> newContactRecords = new List<Contact>();
 
-        for (Lead leadRecord : leadRecords)
+        for (Lead record : records)
         {
             // do not process if website field is blank
-            if (String.isBlank(leadRecord.Website)) continue;
+            if (String.isBlank(record.Website)) continue;
 
             // make sure this is lower case because map key is case sensitive
-            String websiteLowerCase = leadRecord.Website.toLowerCase();
+            String websiteLowerCase = record.Website.toLowerCase();
 
-            Id accountId = accoutIdByWebsite.get(websiteLowerCase);
+            Id accountId = accoutIdByAccountWebsite.get(websiteLowerCase);
 
             // @TODO add lead to contact mapped fields here
             newContactRecords.add(new Contact(
                 AccountId = accountId,
-                FirstName = leadRecord.FirstName,
-                LastName = leadRecord.LastName,
-                Email = leadRecord.Email
+                FirstName = record.FirstName,
+                LastName = record.LastName,
+                Email = record.Email
             ));
         }
 
         insert newContactRecords;
+    }
+
+    /**
+     * Generate key value pair of account id as value and account website as
+     * key.
+     *
+     * @param leadRecords Lead records.
+     * @return  `Map<String, Id>` Account id by account website map.
+     */
+    private Map<String, Id> getAccountIdByAccountWebsite(List<Lead> leadRecords)
+    {
+        Set<String> websites = Leads.newInstance(leadRecords).getWebsites();
+
+        List<Account> accountRecords = AccountsSelector.newInstance().selectByWebsite(websites);
+
+        return Accounts.newInstance(accountRecords).getIdByWebsite();
     }
 }

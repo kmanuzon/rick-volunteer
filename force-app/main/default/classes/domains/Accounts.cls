@@ -23,13 +23,13 @@ public inherited sharing class Accounts
     }
 
     /**
-     * Generate key value pair of account id as value and website as key.
+     * Generate key value pair of id as value and website as key.
      *
-     * @return  `Map<String, Id>` Key value pair of account id by website.
+     * @return  `Map<String, Id>` Id by website map.
      */
-    public Map<String, Id> getAccoutIdByWebsite()
+    public Map<String, Id> getIdByWebsite()
     {
-        Map<String, Id> accountIdByWebsite = new Map<String, Id>();
+        Map<String, Id> valueByKey = new Map<String, Id>();
 
         for (Account record : getRecords())
         {
@@ -39,10 +39,10 @@ public inherited sharing class Accounts
             // make sure this is lower case because map key is case sensitive
             String websiteLowerCase = record.Website.toLowerCase();
 
-            accountIdByWebsite.put(websiteLowerCase, record.Id);
+            valueByKey.put(websiteLowerCase, record.Id);
         }
 
-        return accountIdByWebsite;
+        return valueByKey;
     }
 
     /**
